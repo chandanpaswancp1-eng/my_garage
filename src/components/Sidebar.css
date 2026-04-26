@@ -1,0 +1,80 @@
+.sidebar {
+  width: var(--sidebar-width);
+  height: 100vh;
+  background-color: var(--bg-sidebar);
+  color: var(--text-muted);
+  border-right: 1px solid #2A3042;
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebar-logo {
+  padding: 24px;
+}
+
+.logo-icon-bg {
+  background-color: #27376D;
+  padding: 6px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.logo-icon {
+  color: #8C9EFF;
+}
+
+.sidebar-menu {
+  padding: 0 16px;
+  flex: 1;
+}
+
+.menu-label {
+  padding: 0 12px;
+  margin-bottom: 12px;
+  display: block;
+}
+
+.nav-item {
+  padding: 12px;
+  border-radius: 8px;
+  color: #A0A5BB;
+  transition: all 0.2s;
+}
+
+.nav-item:hover {
+  background-color: var(--bg-sidebar-hover);
+  color: white;
+}
+
+.nav-item.active {
+  background-color: var(--bg-sidebar-active);
+  color: white;
+}
+
+.sidebar-footer {
+  padding: 24px 16px;
+  border-top: 1px solid #2A3042;
+}
+
+.avatar {
+  width: 40px;
+  height: 40px;
+  background-color: #8C9EFF;
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+}
+
+.switch-account {
+  margin-top: 16px;
+  padding: 12px;
+  background-color: #262C43;
+  border-radius: 8px;
+  color: #A0A5BB;
+  cursor: pointer;
+}
