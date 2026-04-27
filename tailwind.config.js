@@ -9,6 +9,7 @@ export default {
       colors: {
         'sewa-blue': '#3158f6',
         'sewa-dark': '#1E2336',
+        'primary': '#3158f6',
       }
     },
   },
