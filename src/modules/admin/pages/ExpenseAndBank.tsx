@@ -3,6 +3,7 @@ import { useApp } from '../../../context/AppContext';
 import { Card, CardContent, Button, Badge, Input, Select, Modal, formatNPR } from '../../../components/UI';
 import { Trash2, Plus, Download, ArrowDownRight, ArrowUpRight, QrCode, Landmark, Wallet, CheckCircle } from 'lucide-react';
 import { ExpenseCategory, LinkedBank, LinkedWallet } from '../../../types';
+import { exportToExcel } from '../../../utils/exportUtils';
 
 // ==================== Expense Manager ====================
 
@@ -19,19 +20,35 @@ export const ExpenseManager: React.FC = () => {
     setNewExpense({ title: '', amount: 0, category: 'Rent', date: new Date().toISOString().split('T')[0] });
   };
 
+  const exportExpensesCSV = () => {
+    const headers = ['Date', 'Description', 'Category', 'Amount (NPR)'];
+    const rows = expenses.map(e => [
+      e.date,
+      e.title,
+      e.category,
+      e.amount
+    ]);
+    exportToExcel(headers, rows, `Expense_Report_${new Date().toISOString().split('T')[0]}`);
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <h2 className="text-2xl font-bold text-slate-800">Expenses & P&L</h2>
-        <Button onClick={() => setShowAdd(true)} className="w-full sm:w-auto">
-          <Plus className="w-4 h-4 mr-2" /> Add Expense
-        </Button>
+        <div className="flex space-x-2 w-full sm:w-auto">
+          <Button variant="outline" onClick={exportExpensesCSV}>
+            <Download className="w-4 h-4 mr-2" /> Excel
+          </Button>
+          <Button onClick={() => setShowAdd(true)}>
+            <Plus className="w-4 h-4 mr-2" /> Add Expense
+          </Button>
+        </div>
       </div>
 
       <Modal isOpen={showAdd} onClose={() => setShowAdd(false)} title="Record New Expense">
         <form onSubmit={handleAdd} className="space-y-4">
           <Input label="Expense Title / Description" required value={newExpense.title} onChange={e => setNewExpense({ ...newExpense, title: e.target.value })} />
-          <Input label="Amount (NPR)" type="number" required min="1" value={newExpense.amount || ''} onChange={e => setNewExpense({ ...newExpense, amount: Number(e.target.value) })} />
+          <Input label="Amount (NPR)" type="number" step="0.01" required min="1" value={newExpense.amount || ''} onChange={e => setNewExpense({ ...newExpense, amount: Number(e.target.value) })} />
           <Select
             label="Category"
             value={newExpense.category}
@@ -231,7 +248,7 @@ export const BankAndTransactions: React.FC = () => {
 
       {/* Payment Settings */}
       <Card>
-        <div className="px-6 py-5 border-b border-slate-100"><h3 className="text-lg font-semibold text-slate-800">Legacy QR & Bank Details</h3></div>
+        <div className="px-6 py-5 border-b border-slate-100"><h3 className="text-lg font-semibold text-slate-800">Garage Identity & Payment Settings</h3></div>
         <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-2">Upload Payment QR Code</label>
@@ -245,9 +262,14 @@ export const BankAndTransactions: React.FC = () => {
               </div>
             </div>
           </div>
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">Bank Details Text</label>
-            <textarea className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 focus:bg-white transition-all text-sm" rows={5} value={settings.bankDetails} onChange={e => updateSettings({ bankDetails: e.target.value })} />
+          <div className="space-y-4">
+            <div>
+              <Input label="VAT / PAN Number" value={settings.vatNumber || ''} onChange={e => updateSettings({ vatNumber: e.target.value })} placeholder="Enter 9-digit PAN/VAT number" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">Bank Details Text</label>
+              <textarea className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 focus:bg-white transition-all text-sm" rows={3} value={settings.bankDetails} onChange={e => updateSettings({ bankDetails: e.target.value })} />
+            </div>
           </div>
         </div>
       </Card>
@@ -261,7 +283,7 @@ export const BankAndTransactions: React.FC = () => {
               <Input label="Date" type="date" required value={newTx.date} onChange={e => setNewTx({ ...newTx, date: e.target.value })} />
               <Select label="Transaction Type" value={newTx.type} onChange={e => setNewTx({ ...newTx, type: e.target.value as 'Credit' | 'Debit' })} options={[{ value: 'Credit', label: 'Money In (Credit)' }, { value: 'Debit', label: 'Money Out (Debit)' }]} />
               <Input label="Description" required value={newTx.description} onChange={e => setNewTx({ ...newTx, description: e.target.value })} placeholder="e.g., Owner Capital Injection" />
-              <Input label="Amount (NPR)" type="number" required min="1" value={newTx.amount || ''} onChange={e => setNewTx({ ...newTx, amount: Number(e.target.value) })} />
+              <Input label="Amount (NPR)" type="number" step="0.01" required min="1" value={newTx.amount || ''} onChange={e => setNewTx({ ...newTx, amount: Number(e.target.value) })} />
               <div className="md:col-span-2"><Button type="submit" variant="success" className="w-full sm:w-auto">Save Transaction</Button></div>
             </form>
           </div>

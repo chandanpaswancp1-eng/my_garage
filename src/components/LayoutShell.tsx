@@ -2,16 +2,18 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { Wrench, Menu, Bell, ChevronDown, X, LogOut } from 'lucide-react';
 import { Button } from './UI';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 
 interface LayoutProps {
   children: React.ReactNode;
-  sidebarItems: { id: string; label: string; icon: React.ElementType }[];
-  activeTab: string;
-  setActiveTab: (id: string) => void;
+  sidebarItems: { id: string; label: string; icon: React.ElementType; path: string }[];
+  basePath: string;
 }
 
-export const Layout: React.FC<LayoutProps> = ({ children, sidebarItems, activeTab, setActiveTab }) => {
+export const Layout: React.FC<LayoutProps> = ({ children, sidebarItems, basePath }) => {
   const { currentUser, setCurrentUser, users, notifications, markNotificationsRead, logout } = useApp();
+  const location = useLocation();
+  const navigate = useNavigate();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const notificationRef = useRef<HTMLDivElement>(null);
@@ -22,9 +24,14 @@ export const Layout: React.FC<LayoutProps> = ({ children, sidebarItems, activeTa
   const myNotifications = notifications.filter(n => n.userId === currentUser.id);
   const unreadCount = myNotifications.filter(n => !n.read).length;
 
+  const activeTabId = sidebarItems.find(item => location.pathname === item.path || (item.id === 'dashboard' && location.pathname === basePath))?.id || 'dashboard';
+
   const handleRoleSwitch = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const user = users.find(u => u.role === e.target.value);
-    if (user) setCurrentUser(user);
+    if (user) {
+      setCurrentUser(user);
+      navigate('/'); // Redirect to base on role switch
+    }
   };
 
   useEffect(() => {
@@ -76,16 +83,17 @@ export const Layout: React.FC<LayoutProps> = ({ children, sidebarItems, activeTa
           <p className="px-4 text-xs font-semibold text-slate-400 uppercase tracking-wider mb-4">Menu</p>
           {sidebarItems.map((item) => {
             const Icon = item.icon;
-            const isActive = activeTab === item.id;
+            const isActive = activeTabId === item.id;
             return (
-              <button
+              <Link
                 key={item.id}
-                onClick={() => { setActiveTab(item.id); setIsMobileMenuOpen(false); }}
+                to={item.path}
+                onClick={() => setIsMobileMenuOpen(false)}
                 className={`w-full flex items-center px-4 py-3.5 rounded-xl transition-all duration-200 group ${isActive ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20' : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'}`}
               >
                 <Icon className={`w-5 h-5 mr-3 transition-transform duration-200 ${isActive ? 'scale-110' : 'group-hover:scale-110'}`} />
                 <span className="font-medium">{item.label}</span>
-              </button>
+              </Link>
             );
           })}
         </nav>
@@ -126,7 +134,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, sidebarItems, activeTa
             <button className="md:hidden p-2 -ml-2 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors" onClick={() => setIsMobileMenuOpen(true)}>
               <Menu className="w-6 h-6" />
             </button>
-            <h1 className="text-lg md:text-xl font-bold text-slate-800 ml-2 md:ml-0 capitalize truncate max-w-[200px] sm:max-w-none">{activeTab.replace('_', ' ')}</h1>
+            <h1 className="text-lg md:text-xl font-bold text-slate-800 ml-2 md:ml-0 capitalize truncate max-w-[200px] sm:max-w-none">{activeTabId.replace('_', ' ')}</h1>
           </div>
           
           <div className="flex items-center space-x-2 sm:space-x-4" ref={notificationRef}>

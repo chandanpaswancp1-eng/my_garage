@@ -4,6 +4,7 @@ import { Wrench, Shield, Zap, Star, ChevronRight, PlayCircle, Users, CheckCircle
 import { Button } from '../components/UI';
 
 export const LandingPage: React.FC = () => {
+  const navigate = useNavigate();
   return (
     <div className="min-h-screen bg-white">
       {/* Navigation */}
@@ -20,7 +21,7 @@ export const LandingPage: React.FC = () => {
             <a href="#about" className="text-sm font-semibold text-slate-600 hover:text-blue-600 transition-colors">About Us</a>
             <a href="#reviews" className="text-sm font-semibold text-slate-600 hover:text-blue-600 transition-colors">Reviews</a>
             <Button variant="outline" size="sm" onClick={() => navigate('/login')}>Login</Button>
-            <Button size="sm" onClick={() => navigate('/login')}>Get Started</Button>
+            <Button size="sm" onClick={() => navigate('/signup')}>Get Started</Button>
           </div>
         </div>
       </nav>
@@ -37,7 +38,7 @@ export const LandingPage: React.FC = () => {
               Experience Nepal's most advanced automobile service management. Real-time tracking, transparent billing, and expert care—all in one place.
             </p>
             <div className="flex flex-col sm:flex-row gap-4">
-              <Button size="lg" className="h-14 px-8 text-lg font-bold shadow-xl shadow-blue-500/25" onClick={() => navigate('/login')}>
+              <Button size="lg" className="h-14 px-8 text-lg font-bold shadow-xl shadow-blue-500/25" onClick={() => navigate('/signup')}>
                 Book a Service Now <ChevronRight className="ml-2 w-5 h-5" />
               </Button>
               <Button variant="outline" size="lg" className="h-14 px-8 text-lg font-bold">
@@ -124,7 +125,7 @@ export const LandingPage: React.FC = () => {
             Ready to give your car the <br/><span className="text-blue-500 text-glow">premium care</span> it deserves?
           </h2>
           <div className="flex flex-col sm:flex-row justify-center items-center gap-6">
-            <Button size="lg" className="h-16 px-12 text-xl font-black bg-blue-600 hover:bg-blue-700 shadow-2xl shadow-blue-500/20">
+            <Button size="lg" className="h-16 px-12 text-xl font-black bg-blue-600 hover:bg-blue-700 shadow-2xl shadow-blue-500/20" onClick={() => navigate('/signup')}>
               Book Appointment Now
             </Button>
             <p className="text-slate-400 font-bold flex items-center">

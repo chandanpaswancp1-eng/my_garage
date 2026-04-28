@@ -16,10 +16,18 @@ app.get('/', (req: Request, res: Response) => {
 });
 
 import { login } from './controllers/authController.js';
+import { getUsers } from './controllers/userController.js';
+import { getVehicles } from './controllers/vehicleController.js';
 import { getBookings, createBooking } from './controllers/serviceController.js';
 
 // Auth
 app.post('/api/auth/login', login);
+
+// Users
+app.get('/api/users', getUsers);
+
+// Vehicles
+app.get('/api/vehicles', getVehicles);
 
 // Bookings
 app.get('/api/bookings', getBookings);

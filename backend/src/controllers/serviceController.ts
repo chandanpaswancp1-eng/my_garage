@@ -1,14 +1,36 @@
 import { Request, Response } from 'express';
+import prisma from '../lib/prisma.js';
 
-// Mock data store
-let bookings: any[] = [];
-
-export const getBookings = (req: Request, res: Response) => {
-  res.json(bookings);
+export const getBookings = async (req: Request, res: Response) => {
+  try {
+    const bookings = await prisma.booking.findMany({
+      include: {
+        vehicle: {
+          include: {
+            customer: true
+          }
+        }
+      }
+    });
+    res.json(bookings);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch bookings' });
+  }
 };
 
-export const createBooking = (req: Request, res: Response) => {
-  const newBooking = { id: Date.now().toString(), ...req.body };
-  bookings.push(newBooking);
-  res.status(201).json(newBooking);
+export const createBooking = async (req: Request, res: Response) => {
+  try {
+    const { vehicleId, serviceType, notes } = req.body;
+    const newBooking = await prisma.booking.create({
+      data: {
+        vehicleId,
+        serviceType,
+        notes,
+        status: 'pending'
+      }
+    });
+    res.status(201).json(newBooking);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to create booking' });
+  }
 };

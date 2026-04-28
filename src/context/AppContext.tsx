@@ -1,5 +1,6 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
-import { User, Vehicle, ServiceBooking, Invoice, Part, Staff, Attendance, LeaveRequest, AppNotification, Holiday, Payslip, Expense, AdvanceSalaryRequest, BankTransaction, GarageSettings } from '../types';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { User, Vehicle, ServiceBooking, Invoice, Part, Staff, Attendance, LeaveRequest, AppNotification, Holiday, Payslip, Expense, AdvanceSalaryRequest, BankTransaction, GarageSettings, LinkedBank, LinkedWallet, ActivityLog } from '../types';
+import { authApi, bookingApi, apiFetch } from '../services/api';
 
 // --- Mock Data ---
 const MOCK_USERS: User[] = [
@@ -84,8 +85,8 @@ const MOCK_TRANSACTIONS: BankTransaction[] = [
 
 // --- Context Definition ---
 interface AppState {
-  currentUser: User;
-  setCurrentUser: (user: User) => void;
+  currentUser: User | null;
+  setCurrentUser: (user: User | null) => void;
   users: User[];
   vehicles: Vehicle[];
   bookings: ServiceBooking[];
@@ -145,6 +146,14 @@ interface AppState {
   unlinkGarageBank: (bankId: string) => void;
   linkGarageWallet: (wallet: Omit<LinkedWallet, 'id'>) => void;
   unlinkGarageWallet: (walletId: string) => void;
+  signup: (userData: Omit<User, 'id' | 'role'>) => void;
+  staffSignup: (staffData: Omit<Staff, 'id' | 'role' | 'weeklyOff'>) => void;
+  updateCustomer: (id: string, updates: Partial<User>) => void;
+  updateVehicle: (id: string, updates: Partial<Vehicle>) => void;
+  deleteCustomer: (id: string) => void;
+  deleteVehicle: (id: string) => void;
+  login: (identifier: string) => boolean;
+  addActivityLog: (userId: string, action: string, details: string) => void;
   logout: () => void;
 }
 
@@ -156,32 +165,108 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     return saved ? JSON.parse(saved) : null;
   });
   
-  const [users, setUsers] = useState<User[]>(MOCK_USERS);
-  const [vehicles, setVehicles] = useState<Vehicle[]>(MOCK_VEHICLES);
-  const [bookings, setBookings] = useState<ServiceBooking[]>(MOCK_BOOKINGS);
-  const [invoices, setInvoices] = useState<Invoice[]>(MOCK_INVOICES);
-  const [parts, setParts] = useState<Part[]>(MOCK_PARTS);
-  const [staff, setStaff] = useState<Staff[]>(MOCK_STAFF);
-  const [attendance, setAttendance] = useState<Attendance[]>(MOCK_ATTENDANCE);
+  // Persistence Helpers
+  const loadState = <T,>(key: string, defaultValue: T): T => {
+    const saved = localStorage.getItem(`sewa_${key}`);
+    return saved ? JSON.parse(saved) : defaultValue;
+  };
 
-  useEffect(() => {
-    if (currentUser) {
-      localStorage.setItem('sewa_user', JSON.stringify(currentUser));
-    } else {
-      localStorage.removeItem('sewa_user');
-    }
-  }, [currentUser]);
-  const [leaves, setLeaves] = useState<LeaveRequest[]>(MOCK_LEAVES);
-  const [notifications, setNotifications] = useState<AppNotification[]>(MOCK_NOTIFICATIONS);
-  const [holidays, setHolidays] = useState<Holiday[]>(MOCK_HOLIDAYS);
-  const [payslips, setPayslips] = useState<Payslip[]>(MOCK_PAYSLIPS);
-  const [expenses, setExpenses] = useState<Expense[]>(MOCK_EXPENSES);
-  const [advances, setAdvances] = useState<AdvanceSalaryRequest[]>(MOCK_ADVANCES);
-  const [transactions, setTransactions] = useState<BankTransaction[]>(MOCK_TRANSACTIONS);
-  const [settings, setSettings] = useState<GarageSettings>({
+  const [users, setUsers] = useState<User[]>(() => loadState('users', MOCK_USERS));
+  const [vehicles, setVehicles] = useState<Vehicle[]>(() => loadState('vehicles', MOCK_VEHICLES));
+  const [bookings, setBookings] = useState<ServiceBooking[]>(() => loadState('bookings', MOCK_BOOKINGS));
+  const [invoices, setInvoices] = useState<Invoice[]>(() => loadState('invoices', MOCK_INVOICES));
+  const [parts, setParts] = useState<Part[]>(() => loadState('parts', MOCK_PARTS));
+  const [staff, setStaff] = useState<Staff[]>(() => loadState('staff', MOCK_STAFF));
+  const [attendance, setAttendance] = useState<Attendance[]>(() => loadState('attendance', MOCK_ATTENDANCE));
+  const [leaves, setLeaves] = useState<LeaveRequest[]>(() => loadState('leaves', MOCK_LEAVES));
+  const [notifications, setNotifications] = useState<AppNotification[]>(() => loadState('notifications', MOCK_NOTIFICATIONS));
+  const [holidays, setHolidays] = useState<Holiday[]>(() => loadState('holidays', MOCK_HOLIDAYS));
+  const [payslips, setPayslips] = useState<Payslip[]>(() => loadState('payslips', MOCK_PAYSLIPS));
+  const [expenses, setExpenses] = useState<Expense[]>(() => loadState('expenses', MOCK_EXPENSES));
+  const [advances, setAdvances] = useState<AdvanceSalaryRequest[]>(() => loadState('advances', MOCK_ADVANCES));
+  const [transactions, setTransactions] = useState<BankTransaction[]>(() => loadState('transactions', MOCK_TRANSACTIONS));
+  const [settings, setSettings] = useState<GarageSettings>(() => loadState('settings', {
     qrCodeUrl: '',
     bankDetails: 'Bank: Global IME Bank\nAccount Name: Sewa Automobile Pvt. Ltd.\nAccount No: 01234567890123\nBranch: Kantipath'
-  });
+  }));
+
+  // --- Data Fetching ---
+  const refreshData = async () => {
+    try {
+      const [fetchedUsers, fetchedVehicles, fetchedBookings] = await Promise.all([
+        apiFetch('/api/users'),
+        apiFetch('/api/vehicles'),
+        apiFetch('/api/bookings')
+      ]);
+      
+      setUsers(fetchedUsers);
+      setVehicles(fetchedVehicles);
+      setBookings(fetchedBookings);
+    } catch (error) {
+      console.error('Failed to fetch data from backend:', error);
+    }
+  };
+
+  useEffect(() => {
+    refreshData();
+  }, []);
+
+  // Sync to LocalStorage
+  useEffect(() => {
+    localStorage.setItem('sewa_user', JSON.stringify(currentUser));
+    localStorage.setItem('sewa_users', JSON.stringify(users));
+    localStorage.setItem('sewa_vehicles', JSON.stringify(vehicles));
+    localStorage.setItem('sewa_bookings', JSON.stringify(bookings));
+    localStorage.setItem('sewa_invoices', JSON.stringify(invoices));
+    localStorage.setItem('sewa_parts', JSON.stringify(parts));
+    localStorage.setItem('sewa_staff', JSON.stringify(staff));
+    localStorage.setItem('sewa_attendance', JSON.stringify(attendance));
+    localStorage.setItem('sewa_leaves', JSON.stringify(leaves));
+    localStorage.setItem('sewa_notifications', JSON.stringify(notifications));
+    localStorage.setItem('sewa_holidays', JSON.stringify(holidays));
+    localStorage.setItem('sewa_payslips', JSON.stringify(payslips));
+    localStorage.setItem('sewa_expenses', JSON.stringify(expenses));
+    localStorage.setItem('sewa_advances', JSON.stringify(advances));
+    localStorage.setItem('sewa_transactions', JSON.stringify(transactions));
+    localStorage.setItem('sewa_settings', JSON.stringify(settings));
+  }, [currentUser, users, vehicles, bookings, invoices, parts, staff, attendance, leaves, notifications, holidays, payslips, expenses, advances, transactions, settings]);
+
+  // --- Service Reminders Logic ---
+  useEffect(() => {
+    const checkServiceDue = () => {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      vehicles.forEach(vehicle => {
+        if (!vehicle.nextService) return;
+        
+        const nextServiceDate = new Date(vehicle.nextService);
+        nextServiceDate.setHours(0, 0, 0, 0);
+
+        // If service is due today or overdue
+        if (nextServiceDate <= today) {
+          // Check if we already sent a notification for this vehicle recently
+          const alreadyNotified = notifications.some(n => 
+            n.userId === vehicle.customerId && 
+            n.message.includes(vehicle.model) && 
+            n.message.includes('service is due')
+          );
+
+          if (!alreadyNotified) {
+            addNotification(
+              vehicle.customerId, 
+              `Service Reminder: Your ${vehicle.model} (${vehicle.number}) service is due. Book an appointment today!`
+            );
+          }
+        }
+      });
+    };
+
+    // Run check when vehicles change or on initial load
+    if (vehicles.length > 0) {
+      checkServiceDue();
+    }
+  }, [vehicles.length]); // Dependency on vehicles list size
 
   const addNotification = (userId: string, message: string) => {
     setNotifications(prev => [{
@@ -313,15 +398,34 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }));
   };
 
-  const addBooking = (booking: Omit<ServiceBooking, 'id'>) => {
-    const newId = `b${Date.now()}`;
-    const newBooking = { ...booking, id: newId };
-    setBookings(prev => [...prev, newBooking]);
-    
-    // Notify Customer
-    addNotification(booking.customerId, `Your booking for ${booking.type} has been received.`);
-    // Notify Admin
-    addNotification('u1', `New booking received: ${booking.type} for vehicle ${booking.vehicleId}.`);
+  const addBooking = async (booking: Omit<ServiceBooking, 'id'>) => {
+    try {
+      const newBooking = await bookingApi.create({
+        vehicleId: booking.vehicleId,
+        serviceType: booking.type,
+        notes: booking.notes
+      });
+      
+      // Update local state with returned booking (mapping backend fields to frontend if needed)
+      const mappedBooking: ServiceBooking = {
+        ...booking,
+        id: newBooking.id,
+        status: newBooking.status as ServiceStatus,
+        date: newBooking.date
+      };
+      
+      setBookings(prev => [...prev, mappedBooking]);
+      
+      // Notify Customer
+      addNotification(booking.customerId, `Your booking for ${booking.type} has been received.`);
+      // Notify Admin
+      addNotification('u1', `New booking received: ${booking.type} for vehicle ${booking.vehicleId}.`);
+    } catch (error) {
+      console.error('Failed to create booking on backend:', error);
+      // Fallback
+      const newId = `b${Date.now()}`;
+      setBookings(prev => [...prev, { ...booking, id: newId }]);
+    }
   };
 
   const updateBookingStatus = (id: string, status: ServiceBooking['status']) => {
@@ -340,30 +444,40 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   };
 
   const addInvoice = (invoice: Omit<Invoice, 'id'>) => {
-    const newId = `inv${Date.now()}`;
-    setInvoices(prev => [...prev, { ...invoice, id: newId }]);
-    
-    // Notify Customer
-    addNotification(invoice.customerId, `A new invoice of NPR ${invoice.total} has been generated for your service.`);
-    
-    // Notify Admin based on payment status
-    if (invoice.status === 'Pending') {
-      addNotification('u1', `Payment pending for Invoice #${newId} (NPR ${invoice.remaining}).`);
-    } else if (invoice.status === 'Paid') {
-      addNotification('u1', `Payment received for Invoice #${newId} (NPR ${invoice.total}).`);
-    }
+    setInvoices(prev => {
+      // Find the highest existing serial number from invoice IDs
+      const maxIdNum = prev.reduce((max, inv) => {
+        const num = parseInt(inv.id.replace(/\D/g, '')) || 0;
+        return Math.max(max, num);
+      }, 0);
+      
+      const newId = `INV-${String(maxIdNum + 1).padStart(4, '0')}`;
+      const newInvoice = { ...invoice, id: newId };
+      
+      // Notify Customer (Note: in a real app, side-effects like notifications should ideally happen outside the state setter or in a useEffect, but this keeps it synchronous for the demo)
+      addNotification(invoice.customerId, `A new invoice of NPR ${invoice.total} has been generated for your service. Invoice #${newId}`);
+      
+      // Notify Admin based on payment status
+      if (invoice.status === 'Pending') {
+        addNotification('u1', `Payment pending for Invoice #${newId} (NPR ${invoice.remaining}).`);
+      } else if (invoice.status === 'Paid') {
+        addNotification('u1', `Payment received for Invoice #${newId} (NPR ${invoice.total}).`);
+      }
 
-    // Record transaction if there's an initial payment
-    if (invoice.paid > 0) {
-      addTransaction({
-        date: invoice.date,
-        description: `Payment for Invoice #${newId}`,
-        amount: invoice.paid,
-        type: 'Credit',
-        referenceId: newId,
-        source: 'System'
-      });
-    }
+      // Record transaction if there's an initial payment
+      if (invoice.paid > 0) {
+        addTransaction({
+          date: new Date().toISOString().split('T')[0],
+          description: `Payment received for Invoice #${newId}`,
+          amount: invoice.paid,
+          type: 'Credit',
+          source: 'System',
+          referenceId: newId
+        });
+      }
+
+      return [...prev, newInvoice];
+    });
   };
 
   const updateInvoice = (id: string, updates: Partial<Invoice>) => {
@@ -516,6 +630,136 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }));
   };
 
+  const signup = (userData: Omit<User, 'id' | 'role'>) => {
+    const newUser: User = {
+      ...userData,
+      id: `u${Date.now()}`,
+      role: 'customer'
+    };
+    setUsers(prev => [...prev, newUser]);
+    setCurrentUser(newUser);
+  };
+
+  const updateCustomer = (id: string, updates: Partial<User>) => {
+    setUsers(prev => prev.map(u => u.id === id ? { ...u, ...updates } : u));
+  };
+
+  const updateVehicle = (id: string, updates: Partial<Vehicle>) => {
+    setVehicles(prev => prev.map(v => {
+      if (v.id === id) {
+        // If nextServiceKM is updated by admin, notify the customer
+        if (updates.nextServiceKM !== undefined && updates.nextServiceKM !== v.nextServiceKM) {
+          addNotification(
+            v.customerId,
+            `Update: Your ${v.model} (${v.number}) next service is now set at ${updates.nextServiceKM} KM.`
+          );
+        }
+
+        // If currentKM is updated by customer, check if service is due
+        if (updates.currentKM !== undefined && v.nextServiceKM !== undefined) {
+          addActivityLog(v.customerId, 'Mileage Update', `Vehicle ${v.model} (${v.number}) odometer updated to ${updates.currentKM} KM`);
+          const remainingKM = v.nextServiceKM - updates.currentKM;
+          
+          if (remainingKM <= 0) {
+            // Trigger simulated Email notification
+            addNotification(
+              v.customerId,
+              `[EMAIL NOTIFICATION] URGENT: Your ${v.model} (${v.number}) has exceeded its service mileage limit! Please book an appointment immediately.`
+            );
+            // Also notify admin
+            addNotification('u1', `Customer Vehicle ${v.model} (${v.number}) has exceeded service KM limit. Please contact customer.`);
+          } else if (remainingKM <= 500) {
+            // Trigger simulated Email notification
+            addNotification(
+              v.customerId,
+              `[EMAIL NOTIFICATION] Reminder: Your ${v.model} (${v.number}) is due for service in ${remainingKM} KM. Please schedule your visit soon.`
+            );
+          }
+        }
+
+        return { ...v, ...updates };
+      }
+      return v;
+    }));
+  };
+
+  const addActivityLog = (userId: string, action: string, details: string) => {
+    const newLog: ActivityLog = {
+      id: `log${Date.now()}`,
+      timestamp: new Date().toISOString(),
+      action,
+      details
+    };
+    setUsers(prev => prev.map(u => {
+      if (u.id === userId) {
+        const logs = u.activityLogs || [];
+        return { ...u, activityLogs: [newLog, ...logs] };
+      }
+      return u;
+    }));
+  };
+
+  const login = async (identifier: string) => {
+    try {
+      const response = await authApi.login({ phone: identifier });
+      const user = response.user;
+      const now = new Date().toISOString();
+      
+      const updatedUser = { ...user, lastLogin: now };
+      setCurrentUser(updatedUser);
+      
+      if (user.role === 'customer') {
+        addActivityLog(user.id, 'Login', `Customer logged into the system at ${new Date().toLocaleString()}`);
+      }
+      
+      return true;
+    } catch (error) {
+      console.error('Login failed:', error);
+      // Fallback for demo purposes if backend fails
+      const user = users.find(u => u.phone === identifier || u.email === identifier);
+      if (user) {
+        setCurrentUser(user);
+        return true;
+      }
+      return false;
+    }
+  };
+
+  const deleteCustomer = (id: string) => {
+    setUsers(prev => prev.filter(u => u.id !== id));
+    // Optionally remove related data
+    setVehicles(prev => prev.filter(v => v.customerId !== id));
+    setBookings(prev => prev.filter(b => b.customerId !== id));
+    setInvoices(prev => prev.filter(inv => inv.customerId !== id));
+  };
+
+  const deleteVehicle = (id: string) => {
+    setVehicles(prev => prev.filter(v => v.id !== id));
+    setBookings(prev => prev.filter(b => b.vehicleId !== id));
+  };
+
+  const staffSignup = (staffData: Omit<Staff, 'id' | 'role' | 'weeklyOff'>) => {
+    const newId = `u${Date.now()}`;
+    const newStaff: Staff = {
+      ...staffData,
+      id: newId,
+      role: 'staff',
+      weeklyOff: 'Saturday',
+      joinedDate: new Date().toISOString().split('T')[0]
+    };
+    const newUser: User = {
+      id: newId,
+      name: staffData.name,
+      role: 'staff',
+      phone: staffData.phone,
+      email: staffData.email
+    };
+    
+    setStaff(prev => [...prev, newStaff]);
+    setUsers(prev => [...prev, newUser]);
+    setCurrentUser(newUser);
+  };
+
   const logout = () => {
     setCurrentUser(null);
   };
@@ -527,7 +771,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       addCustomer, addVehicle, addStaff, updateStaffWeeklyOff, addHoliday, deleteHoliday, addPayslip, addExpense, deleteExpense, addAdvanceRequest, updateAdvanceRequest, addTransaction, updateSettings,
       linkBank, unlinkBank, linkWallet, unlinkWallet,
       linkGarageBank, unlinkGarageBank, linkGarageWallet, unlinkGarageWallet,
-      logout
+      signup, staffSignup, updateCustomer, updateVehicle, deleteCustomer, deleteVehicle, login, addActivityLog, logout
     }}>
       {children}
     </AppContext.Provider>

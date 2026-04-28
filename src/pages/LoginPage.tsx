@@ -1,30 +1,26 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import { Button, Input, Card, Badge } from '../components/UI';
 import { Wrench, Phone, Lock, ChevronRight, User as UserIcon, Shield, Briefcase } from 'lucide-react';
 
 export const LoginPage: React.FC = () => {
-  const { users, setCurrentUser } = useApp();
+  const { login } = useApp();
   const navigate = useNavigate();
   const [identifier, setIdentifier] = useState('');
   const [isDemoMode, setIsDemoMode] = useState(true);
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    const user = users.find(u => u.phone === identifier || u.email === identifier);
-    if (user) {
-      setCurrentUser(user);
+    if (login(identifier)) {
       navigate('/');
     } else {
       alert('Account not found. Please check your email/number or try a demo account.');
     }
   };
 
-  const selectDemoUser = (role: 'admin' | 'customer' | 'staff') => {
-    const demoUser = users.find(u => u.role === role);
-    if (demoUser) {
-      setCurrentUser(demoUser);
+  const selectDemoUser = (phone: string) => {
+    if (login(phone)) {
       navigate('/');
     }
   };
@@ -88,7 +84,7 @@ export const LoginPage: React.FC = () => {
             ].map((demo) => (
               <button
                 key={demo.role}
-                onClick={() => selectDemoUser(demo.role as any)}
+                onClick={() => selectDemoUser(demo.phone)}
                 className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 hover:bg-white hover:shadow-lg hover:shadow-slate-100 border border-transparent hover:border-slate-200 transition-all group"
               >
                 <div className="flex items-center space-x-4">
@@ -109,7 +105,7 @@ export const LoginPage: React.FC = () => {
         </Card>
 
         <p className="text-center text-slate-400 font-medium text-sm">
-          Don't have an account? <a href="#" className="text-blue-600 font-bold hover:underline">Request Access</a>
+          Don't have an account? <Link to="/signup" className="text-blue-600 font-bold hover:underline">Sign Up</Link>
         </p>
       </div>
     </div>

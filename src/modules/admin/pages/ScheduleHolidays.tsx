@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useApp } from '../../../context/AppContext';
-import { Card, CardHeader, CardContent, Button, Input, Trash2 } from '../../../components/UI';
+import { Card, CardHeader, CardContent, Button, Input } from '../../../components/UI';
+import { Trash2 } from 'lucide-react';
 
 export const ScheduleManager = () => {
   const { staff, updateStaffWeeklyOff, holidays, addHoliday, deleteHoliday } = useApp();
@@ -18,7 +19,7 @@ export const ScheduleManager = () => {
   return (
     <div className="space-y-6">
       <h2 className="text-2xl font-bold text-slate-800">Schedule & Holidays</h2>
-      
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>
           <CardHeader title="Staff Weekly Off" />
@@ -36,7 +37,7 @@ export const ScheduleManager = () => {
                     <tr key={s.id} className="hover:bg-slate-50/50">
                       <td className="p-4 font-bold text-slate-900">{s.name}</td>
                       <td className="p-4">
-                        <select 
+                        <select
                           className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-600/50 outline-none"
                           value={s.weeklyOff || 'Saturday'}
                           onChange={(e) => updateStaffWeeklyOff(s.id, e.target.value)}
@@ -56,9 +57,9 @@ export const ScheduleManager = () => {
           <CardHeader title="Public Holidays" />
           <CardContent>
             <form onSubmit={handleAddHoliday} className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-6">
-              <Input placeholder="Holiday Name" required value={newHoliday.name} onChange={e => setNewHoliday({...newHoliday, name: e.target.value})} />
+              <Input placeholder="Holiday Name" required value={newHoliday.name} onChange={e => setNewHoliday({ ...newHoliday, name: e.target.value })} />
               <div className="flex space-x-2">
-                <Input type="date" className="flex-1" required value={newHoliday.date} onChange={e => setNewHoliday({...newHoliday, date: e.target.value})} />
+                <Input type="date" className="flex-1" required value={newHoliday.date} onChange={e => setNewHoliday({ ...newHoliday, date: e.target.value })} />
                 <Button type="submit" className="mb-4">Add</Button>
               </div>
             </form>

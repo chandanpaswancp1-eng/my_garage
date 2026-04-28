@@ -15,6 +15,21 @@ export interface LinkedBank {
   isDefault: boolean;
 }
 
+export interface MileageRecord {
+  id: string;
+  timestamp: string;
+  km: number;
+  source: 'Admin' | 'Customer';
+}
+
+export interface ActivityLog {
+  id: string;
+  timestamp: string;
+  action: string;
+  details: string;
+}
+
+
 export interface User {
   id: string;
   name: string;
@@ -23,6 +38,9 @@ export interface User {
   email?: string;
   linkedBanks?: LinkedBank[];
   linkedWallets?: LinkedWallet[];
+  vatNumber?: string;
+  lastLogin?: string;
+  activityLogs?: ActivityLog[];
 }
 
 export interface Vehicle {
@@ -32,6 +50,9 @@ export interface Vehicle {
   number: string;
   lastService?: string;
   nextService?: string;
+  nextServiceKM?: number;
+  currentKM?: number;
+  mileageHistory?: MileageRecord[];
 }
 
 export type ServiceStatus = 'Pending' | 'In Progress' | 'Completed';
@@ -50,7 +71,7 @@ export interface ServiceBooking {
 
 export type PaymentType = 'Cash' | 'Bank Transfer' | 'QR' | 'Cheque';
 export type InvoiceStatus = 'Paid' | 'Pending' | 'Credit';
-export type InvoiceType = 'VAT' | 'Normal';
+export type InvoiceType = 'VAT' | 'Normal' | 'Special';
 
 export interface InvoiceItem {
   id: string;
@@ -173,4 +194,5 @@ export interface GarageSettings {
   bankDetails: string;
   linkedBanks?: LinkedBank[];
   linkedWallets?: LinkedWallet[];
+  vatNumber?: string;
 }
