@@ -45,78 +45,9 @@ async function main() {
     });
   }
 
-  // 3. Customers
-  const customersData = [
-    { name: 'Alice Customer', phone: '9811111111', email: 'alice@example.com' },
-    { name: 'Bob Customer', phone: '9822222222', email: 'bob@example.com' },
-    { name: 'Charlie Dave', phone: '9833333333', email: 'charlie@example.com' },
-    { name: 'Diana Prince', phone: '9844444444', email: 'diana@example.com' },
-    { name: 'Ethan Hunt', phone: '9855555555', email: 'ethan@example.com' },
-  ];
-
-  const customers = [];
-  for (const c of customersData) {
-    const customer = await prisma.user.upsert({
-      where: { phone: c.phone },
-      update: {},
-      create: {
-        name: c.name,
-        phone: c.phone,
-        role: 'customer',
-        email: c.email,
-      },
-    });
-    customers.push(customer);
-  }
-
-  // 4. Vehicles
-  const vehiclesData = [
-    { model: 'Toyota Hilux', number: 'BA-1-PA-1234', customerIdx: 0 },
-    { model: 'Honda CR-V', number: 'BA-2-CHA-5678', customerIdx: 1 },
-    { model: 'Ford Ranger', number: 'BA-3-KA-9999', customerIdx: 2 },
-    { model: 'Hyundai Tucson', number: 'BA-4-LA-1111', customerIdx: 3 },
-    { model: 'Suzuki Swift', number: 'BA-5-MA-2222', customerIdx: 4 },
-  ];
-
-  const vehicles = [];
-  for (const v of vehiclesData) {
-    const vehicle = await prisma.vehicle.upsert({
-      where: { number: v.number },
-      update: {},
-      create: {
-        model: v.model,
-        number: v.number,
-        customerId: customers[v.customerIdx].id,
-      },
-    });
-    vehicles.push(vehicle);
-  }
-
-  // 5. Bookings
-  const serviceTypes = ['Full Service', 'Car Wash', 'Engine Repair', 'Brake Check', 'Oil Change', 'Wheel Alignment'];
-  const statuses = ['pending', 'in-progress', 'completed', 'cancelled'];
-
-  for (let i = 0; i < 15; i++) {
-    const vehicle = vehicles[Math.floor(Math.random() * vehicles.length)];
-    const serviceType = serviceTypes[Math.floor(Math.random() * serviceTypes.length)];
-    const status = statuses[Math.floor(Math.random() * statuses.length)];
-    
-    await prisma.booking.create({
-      data: {
-        vehicleId: vehicle.id,
-        serviceType,
-        status,
-        notes: `Randomly generated note for ${serviceType}.`,
-        date: new Date(Date.now() - Math.floor(Math.random() * 30) * 24 * 60 * 60 * 1000), // Random date in last 30 days
-      },
-    });
-  }
-
-  console.log('Database seeded with rich dummy data:');
-  console.log(`- ${staffMembers.length + 1} Staff/Admins`);
-  console.log(`- ${customers.length} Customers`);
-  console.log(`- ${vehicles.length} Vehicles`);
-  console.log(`- 15 Bookings`);
+  console.log('Database seeded with essential accounts:');
+  console.log(`- 1 Admin`);
+  console.log(`- ${staffMembers.length} Staff members`);
 }
 
 main()
