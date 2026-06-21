@@ -132,7 +132,7 @@ export const PaymentSettings: React.FC = () => {
             label="Provider" 
             options={[{ label: 'eSewa', value: 'eSewa' }, { label: 'Khalti', value: 'Khalti' }, { label: 'IME Pay', value: 'IME Pay' }]} 
             value={newWallet.provider} 
-            onChange={val => setNewWallet({ ...newWallet, provider: val as LinkedWallet['provider'] })} 
+            onChange={(e: any) => setNewWallet({ ...newWallet, provider: e.target.value as LinkedWallet['provider'] })} 
           />
           <Input label="Phone Number" required value={newWallet.phone} onChange={e => setNewWallet({ ...newWallet, phone: e.target.value })} />
           <div className="flex items-center gap-2"><input type="checkbox" checked={newWallet.isDefault} onChange={e => setNewWallet({ ...newWallet, isDefault: e.target.checked })} /> Set as default</div>

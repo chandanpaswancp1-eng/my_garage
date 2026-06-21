@@ -1,7 +1,7 @@
 import React from 'react';
 import { Badge, Button, formatNPR } from '../../../components/UI';
 import { Download, Edit } from 'lucide-react';
-import { Invoice, User, Vehicle, ServiceBooking, Settings } from '../../../types';
+import { Invoice, User, Vehicle, ServiceBooking, GarageSettings } from '../../../types';
 import { printInvoice } from '../../../utils/printInvoice';
 
 interface Props {
@@ -9,7 +9,7 @@ interface Props {
   users: User[];
   vehicles: Vehicle[];
   bookings: ServiceBooking[];
-  settings: Settings;
+  settings: GarageSettings;
   onEdit: (invoice: Invoice) => void;
 }
 

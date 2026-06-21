@@ -3,7 +3,7 @@ import { useApp } from '../../../context/AppContext';
 import { Card, CardHeader, CardContent, Button, Badge, formatNPR, Modal } from '../../../components/UI';
 import { Car, CheckCircle2, Clock, ChevronRight, QrCode, Building, AlertCircle } from 'lucide-react';
 
-import { Link } from 'react-router-dom';
+import Link from 'next/link';
 
 export const CustomerDashboard: React.FC = () => {
   const { currentUser, vehicles, bookings, invoices, updateInvoice, updateVehicle } = useApp();
@@ -37,7 +37,7 @@ export const CustomerDashboard: React.FC = () => {
           paid: inv.total,
           remaining: 0,
           status: 'Paid',
-          paymentMethod: paymentMethod,
+          paymentMethod: paymentMethod as any,
         });
       });
       setIsProcessing(false);
@@ -67,8 +67,8 @@ export const CustomerDashboard: React.FC = () => {
               </p>
             </div>
           </div>
-          <Link to="/book">
-            <Button variant="warning" size="sm">
+          <Link href="/book">
+            <Button variant="primary" size="sm">
               Schedule Now <ChevronRight className="ml-2 w-4 h-4" />
             </Button>
           </Link>

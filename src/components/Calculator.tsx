@@ -1,3 +1,4 @@
+"use client";
 import React, { useState } from 'react';
 import { Calculator as CalcIcon, X, Delete } from 'lucide-react';
 

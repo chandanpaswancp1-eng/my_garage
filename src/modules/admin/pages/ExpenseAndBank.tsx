@@ -239,7 +239,7 @@ export const BankAndTransactions: React.FC = () => {
             label="Provider" 
             options={[{ label: 'eSewa', value: 'eSewa' }, { label: 'Khalti', value: 'Khalti' }, { label: 'IME Pay', value: 'IME Pay' }]} 
             value={newWallet.provider} 
-            onChange={val => setNewWallet({ ...newWallet, provider: val as LinkedWallet['provider'] })} 
+            onChange={(e: any) => setNewWallet({ ...newWallet, provider: e.target.value as LinkedWallet['provider'] })} 
           />
           <Input label="Phone Number" required value={newWallet.phone} onChange={e => setNewWallet({ ...newWallet, phone: e.target.value })} />
           <Button type="submit" className="w-full">Link Wallet</Button>

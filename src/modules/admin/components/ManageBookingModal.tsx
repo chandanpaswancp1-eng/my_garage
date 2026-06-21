@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Modal, Button, Select, Input, formatNPR } from '../../../components/UI';
 import { FileText, BellRing, Receipt, Trash2 } from 'lucide-react';
-import { ServiceBooking, User, Invoice, Vehicle, InvoiceItem, InvoiceType, PaymentType, Settings } from '../../../types';
+import { ServiceBooking, User, Invoice, Vehicle, InvoiceItem, InvoiceType, PaymentType, GarageSettings } from '../../../types';
 import { calculateTotalWithVAT, calculateVATAmount } from '../../../utils/finance';
 import { printInvoice } from '../../../utils/printInvoice';
 
@@ -11,7 +11,7 @@ interface Props {
   users: User[];
   invoices: Invoice[];
   vehicles: Vehicle[];
-  settings: Settings;
+  settings: GarageSettings;
   updateBookingStatus: (id: string, status: ServiceBooking['status']) => void;
   addInvoice: (invoice: any) => void;
   updateInvoice: (id: string, invoice: any) => void;

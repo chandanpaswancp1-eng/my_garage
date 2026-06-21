@@ -30,7 +30,7 @@ export default function ExpenseChart() {
                 ))}
               </Pie>
               <Tooltip 
-                formatter={(value: number) => `NPR ${value.toLocaleString()}`}
+                formatter={(value: any) => `NPR ${value.toLocaleString()}`}
                 contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
                 itemStyle={{ fontWeight: 600 }}
               />

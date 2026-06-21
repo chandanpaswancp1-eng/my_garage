@@ -1,8 +1,10 @@
+"use client";
 import React, { useState, useRef, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { Wrench, Menu, Bell, ChevronDown, X, LogOut } from 'lucide-react';
 import { Button } from './UI';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import Link from 'next/link';
+import { usePathname, useRouter } from 'next/navigation';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -12,8 +14,8 @@ interface LayoutProps {
 
 export const Layout: React.FC<LayoutProps> = ({ children, sidebarItems, basePath }) => {
   const { currentUser, setCurrentUser, users, notifications, markNotificationsRead, logout } = useApp();
-  const location = useLocation();
-  const navigate = useNavigate();
+  const pathname = usePathname();
+  const router = useRouter();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const notificationRef = useRef<HTMLDivElement>(null);
@@ -24,13 +26,13 @@ export const Layout: React.FC<LayoutProps> = ({ children, sidebarItems, basePath
   const myNotifications = notifications.filter(n => n.userId === currentUser.id);
   const unreadCount = myNotifications.filter(n => !n.read).length;
 
-  const activeTabId = sidebarItems.find(item => location.pathname === item.path || (item.id === 'dashboard' && location.pathname === basePath))?.id || 'dashboard';
+  const activeTabId = sidebarItems.find(item => pathname === item.path || (item.id === 'dashboard' && pathname === basePath))?.id || 'dashboard';
 
   const handleRoleSwitch = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const user = users.find(u => u.role === e.target.value);
     if (user) {
       setCurrentUser(user);
-      navigate('/'); // Redirect to base on role switch
+      router.push('/'); // Redirect to base on role switch
     }
   };
 
@@ -87,7 +89,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, sidebarItems, basePath
             return (
               <Link
                 key={item.id}
-                to={item.path}
+                href={item.path}
                 onClick={() => setIsMobileMenuOpen(false)}
                 className={`w-full flex items-center px-4 py-3.5 rounded-xl transition-all duration-200 group ${isActive ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20' : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'}`}
               >

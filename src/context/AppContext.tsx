@@ -1,5 +1,6 @@
+"use client";
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { User, Vehicle, ServiceBooking, Invoice, Part, Staff, Attendance, LeaveRequest, AppNotification, Holiday, Payslip, Expense, AdvanceSalaryRequest, BankTransaction, GarageSettings, LinkedBank, LinkedWallet, ActivityLog } from '../types';
+import { User, Vehicle, ServiceBooking, ServiceStatus, Invoice, Part, Staff, Attendance, LeaveRequest, AppNotification, Holiday, Payslip, Expense, AdvanceSalaryRequest, BankTransaction, GarageSettings, LinkedBank, LinkedWallet, ActivityLog } from '../types';
 import { authApi, bookingApi, apiFetch } from '../services/api';
 
 // --- Mock Data ---
@@ -152,7 +153,7 @@ interface AppState {
   updateVehicle: (id: string, updates: Partial<Vehicle>) => void;
   deleteCustomer: (id: string) => void;
   deleteVehicle: (id: string) => void;
-  login: (identifier: string) => boolean;
+  login: (identifier: string) => Promise<boolean>;
   addActivityLog: (userId: string, action: string, details: string) => void;
   logout: () => void;
 }
@@ -161,14 +162,20 @@ const AppContext = createContext<AppState | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [currentUser, setCurrentUser] = useState<User | null>(() => {
-    const saved = localStorage.getItem('sewa_user');
-    return saved ? JSON.parse(saved) : null;
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('sewa_user');
+      return saved ? JSON.parse(saved) : null;
+    }
+    return null;
   });
   
   // Persistence Helpers
   const loadState = <T,>(key: string, defaultValue: T): T => {
-    const saved = localStorage.getItem(`sewa_${key}`);
-    return saved ? JSON.parse(saved) : defaultValue;
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem(`sewa_${key}`);
+      return saved ? JSON.parse(saved) : defaultValue;
+    }
+    return defaultValue;
   };
 
   const [users, setUsers] = useState<User[]>(() => loadState('users', MOCK_USERS));
