@@ -1,13 +1,25 @@
 "use client";
-import React, { useEffect } from 'react';
+
+import React, { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Wrench, Shield, Zap, Star, ChevronRight, PlayCircle, Users, CheckCircle2 } from 'lucide-react';
-import { Button } from '../components/UI';
+import Link from 'next/link';
 import { useApp } from '../context/AppContext';
+import gsap from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { useGSAP } from '@gsap/react';
+import './landing.css';
+
+gsap.registerPlugin(ScrollTrigger);
 
 export default function LandingPage() {
   const router = useRouter();
   const { currentUser } = useApp();
+  const container = useRef<HTMLDivElement>(null);
+  const [chatOpen, setChatOpen] = useState(false);
+  const [messages, setMessages] = useState<{sender: 'user' | 'bot', text: string}[]>([
+    { sender: 'bot', text: 'Hello! Welcome to Sewa Auto Mobiles. How can we help you today?' }
+  ]);
+  const [inputValue, setInputValue] = useState('');
 
   // Redirect to dashboard if already logged in
   useEffect(() => {
@@ -18,181 +30,280 @@ export default function LandingPage() {
     }
   }, [currentUser, router]);
 
+  // GSAP Animations
+  useGSAP(() => {
+    // 1. Hero Zoom out and fade
+    const heroTl = gsap.timeline({
+      scrollTrigger: {
+        trigger: "#heroSection",
+        start: "top top",
+        end: "bottom top",
+        scrub: 1,
+        pin: true,
+      }
+    });
+
+    heroTl.to("#heroBg", { scale: 1, opacity: 0.8, duration: 1 }, 0);
+    heroTl.to("#heroTitle", { scale: 2, opacity: 0, duration: 1 }, 0);
+    heroTl.to("#heroSubtitle", { y: -100, opacity: 0, duration: 1 }, 0);
+
+    // 2. Text Reveal (Scrollytelling text)
+    const revealTl = gsap.timeline({
+      scrollTrigger: {
+        trigger: "#revealSection",
+        start: "top top",
+        end: "+=200%",
+        scrub: 1,
+        pin: true
+      }
+    });
+
+    revealTl.to(".text-reveal", { opacity: 1, color: "#fff", duration: 1 });
+    revealTl.to(".text-reveal", { scale: 1.5, opacity: 0, filter: "blur(10px)", duration: 1 });
+
+    // 3. Performance Grid / Services
+    const perfTl = gsap.timeline({
+      scrollTrigger: {
+        trigger: "#perfSection",
+        start: "top top",
+        end: "+=150%",
+        scrub: 1,
+        pin: true
+      }
+    });
+
+    if (document.querySelectorAll('.perf-card').length > 0) {
+      perfTl.to(".perf-card", { y: 0, opacity: 1, stagger: 0.2, duration: 1 });
+    }
+    if (document.getElementById('perfBg')) {
+      perfTl.to("#perfBg", { scale: 1.2, duration: 2 }, 0);
+    }
+
+    // 4. Parallax Banner
+    gsap.to("#parallaxBanner", {
+      y: 200,
+      ease: "none",
+      scrollTrigger: {
+        trigger: ".parallax-section",
+        start: "top bottom",
+        end: "bottom top",
+        scrub: true
+      }
+    });
+
+    // 5. Gallery Items fade up
+    const galleryItems = gsap.utils.toArray('.gallery-item');
+    if (galleryItems.length > 0) {
+      gsap.to(galleryItems, {
+        y: 0,
+        opacity: 1,
+        stagger: 0.1,
+        duration: 0.8,
+        scrollTrigger: {
+          trigger: ".gallery-grid",
+          start: "top 80%",
+        }
+      });
+    }
+
+    // 6. Generic fade-up for static glass panels or CTA
+    const fadeElements = gsap.utils.toArray('.fade-up-on-scroll');
+    fadeElements.forEach((el: any) => {
+      gsap.to(el, {
+        y: 0,
+        opacity: 1,
+        duration: 1,
+        scrollTrigger: {
+          trigger: el,
+          start: "top 80%",
+          toggleActions: "play none none reverse"
+        }
+      });
+    });
+  }, { scope: container });
+
+  const sendMessage = () => {
+    if (inputValue.trim()) {
+      setMessages(prev => [...prev, { sender: 'user', text: inputValue }]);
+      setInputValue('');
+      setTimeout(() => {
+        setMessages(prev => [...prev, { sender: 'bot', text: 'Thank you for reaching out! A representative will be with you shortly.' }]);
+      }, 1000);
+    }
+  };
+
   if (currentUser) return null; // Prevent flash of landing page while redirecting
 
   return (
-    <div className="min-h-screen bg-white">
-      {/* Navigation */}
-      <nav className="fixed top-0 w-full z-50 glass-panel border-b border-slate-100">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <div className="bg-blue-600 p-2 rounded-lg">
-              <Wrench className="w-6 h-6 text-white" />
-            </div>
-            <span className="text-2xl font-black text-slate-900 tracking-tight">Sewa<span className="text-blue-600">Auto</span></span>
-          </div>
-          <div className="hidden md:flex items-center space-x-8">
-            <a href="#features" className="text-sm font-semibold text-slate-600 hover:text-blue-600 transition-colors">Features</a>
-            <a href="#about" className="text-sm font-semibold text-slate-600 hover:text-blue-600 transition-colors">About Us</a>
-            <a href="#reviews" className="text-sm font-semibold text-slate-600 hover:text-blue-600 transition-colors">Reviews</a>
-            <Button variant="outline" size="sm" onClick={() => router.push('/login')}>Login</Button>
-            <Button size="sm" onClick={() => router.push('/signup')}>Get Started</Button>
+    <div ref={container}>
+      {/* Apple-style Navbar */}
+      <nav className="apple-nav">
+        <div className="container">
+          <Link href="/" className="brand">Sewa<span>Auto</span></Link>
+          <div className="links">
+            <Link href="/">Home</Link>
+            <Link href="/about">About</Link>
+            <Link href="/services">Services</Link>
+            <Link href="/gallery">Gallery</Link>
+            <Link href="/contact">Contact</Link>
+            <Link href="/login" className="btn-book">Login / Book</Link>
           </div>
         </div>
       </nav>
 
-      {/* Hero Section */}
-      <section className="pt-32 pb-20 px-4 bg-gradient-to-b from-blue-50/50 to-white overflow-hidden">
-        <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-          <div className="fade-in-up">
-            <Badge variant="info" className="mb-6 px-4 py-1.5 text-sm">Now serving 5000+ vehicles</Badge>
-            <h1 className="text-5xl lg:text-7xl font-black text-slate-900 leading-[1.1] mb-6">
-              Modern Care for Your <span className="text-blue-600 underline decoration-blue-200 underline-offset-8">Vehicle</span>.
-            </h1>
-            <p className="text-xl text-slate-600 mb-10 leading-relaxed max-w-xl">
-              Experience Nepal's most advanced automobile service management. Real-time tracking, transparent billing, and expert care—all in one place.
+      {/* Section 1: Hero Cinematic */}
+      <div id="heroSection" className="scroll-section">
+        <div className="sticky-container">
+          <img src="https://images.unsplash.com/photo-1486262715619-670810a044e1?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80" alt="Mechanic Repair" className="bg-image" id="heroBg" />
+          <div className="text-wrapper">
+            <h1 id="heroTitle" className="hero-title">Beyond Repair.</h1>
+            <p id="heroSubtitle" className="hero-subtitle">The standard for automotive excellence.</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Section 2: Text Reveal */}
+      <div id="revealSection" className="scroll-section">
+        <div className="sticky-container">
+          <div className="text-wrapper">
+            <p className="text-reveal">
+              Expert Mechanics.<br />
+              Transparent <span className="highlight">Pricing.</span><br />
+              Flawless Results.
             </p>
-            <div className="flex flex-col sm:flex-row gap-4">
-              <Button size="lg" className="h-14 px-8 text-lg font-bold shadow-xl shadow-blue-500/25" onClick={() => router.push('/signup')}>
-                Book a Service Now <ChevronRight className="ml-2 w-5 h-5" />
-              </Button>
-              <Button variant="outline" size="lg" className="h-14 px-8 text-lg font-bold">
-                <PlayCircle className="mr-2 w-5 h-5 text-blue-600" /> Watch Demo
-              </Button>
-            </div>
-            <div className="mt-12 flex items-center space-x-6">
-              <div className="flex -space-x-3">
-                {[1,2,3,4].map(i => (
-                  <img key={i} className="w-12 h-12 rounded-full border-4 border-white shadow-sm" src={`https://i.pravatar.cc/150?u=${i}`} alt="User" />
-                ))}
-              </div>
-              <div>
-                <div className="flex text-amber-400 mb-1">
-                  {[1,2,3,4,5].map(i => <Star key={i} className="w-4 h-4 fill-current" />)}
-                </div>
-                <p className="text-sm font-bold text-slate-900">4.9/5 Rating <span className="font-medium text-slate-500">from 2k+ owners</span></p>
-              </div>
-            </div>
-          </div>
-          <div className="relative fade-in-up delay-200">
-            <div className="absolute -top-20 -right-20 w-96 h-96 bg-blue-600/10 rounded-full blur-3xl" />
-            <div className="relative bg-white rounded-3xl shadow-2xl border border-slate-100 p-2 transform rotate-2 hover:rotate-0 transition-transform duration-700">
-              <img src="https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?q=80&w=2000&auto=format&fit=crop" alt="Garage" className="rounded-2xl" />
-              <div className="absolute -bottom-8 -left-8 glass-panel p-6 rounded-2xl shadow-xl border border-white/50 max-w-xs animate-bounce-slow">
-                <div className="flex items-center space-x-3 mb-3">
-                  <div className="bg-emerald-500 p-2 rounded-lg"><Zap className="w-5 h-5 text-white" /></div>
-                  <p className="font-bold text-slate-900">Fast Servicing</p>
-                </div>
-                <p className="text-sm text-slate-500 leading-relaxed">Most services completed in under 4 hours with live updates.</p>
-              </div>
-            </div>
           </div>
         </div>
-      </section>
+      </div>
 
-      {/* Features Grid */}
-      <section id="features" className="py-24 bg-white">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="text-center mb-20">
-            <h2 className="text-4xl font-black text-slate-900 mb-4">Everything You Need</h2>
-            <p className="text-slate-500 text-lg">Powerful features to keep your business running smoothly.</p>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
-            {[
-              { icon: Shield, title: 'Expert Mechanics', desc: 'Certified professionals with years of experience across all major brands.' },
-              { icon: Zap, title: 'Real-time Updates', desc: 'Get notified as your vehicle moves through each stage of servicing.' },
-              { icon: Users, title: 'Customer Portal', desc: 'Full access to your service history, invoices, and future maintenance alerts.' }
-            ].map((f, i) => (
-              <div key={i} className="p-8 rounded-3xl bg-slate-50 hover:bg-blue-600 hover:text-white group transition-all duration-300">
-                <div className="bg-white w-14 h-14 rounded-2xl flex items-center justify-center shadow-sm mb-6 group-hover:bg-blue-500">
-                  <f.icon className="w-7 h-7 text-blue-600 group-hover:text-white" />
-                </div>
-                <h3 className="text-2xl font-bold mb-4">{f.title}</h3>
-                <p className="text-slate-500 group-hover:text-blue-50 leading-relaxed">{f.desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Stats Section */}
-      <section className="py-20 bg-blue-600">
-        <div className="max-w-7xl mx-auto px-4 grid grid-cols-2 lg:grid-cols-4 gap-10 text-center">
-          {[
-            { label: 'Vehicles Served', value: '10k+' },
-            { label: 'Happy Owners', value: '8.5k+' },
-            { label: 'Expert Staff', value: '50+' },
-            { label: 'Success Rate', value: '99.9%' }
-          ].map((s, i) => (
-            <div key={i} className="text-white">
-              <p className="text-5xl font-black mb-2">{s.value}</p>
-              <p className="text-blue-100 font-medium uppercase tracking-widest text-xs">{s.label}</p>
+      {/* Section 3: Performance/Services Grid */}
+      <div id="perfSection" className="scroll-section">
+        <div className="sticky-container">
+          <img src="https://images.unsplash.com/photo-1619642751034-765dfdf7c58e?auto=format&fit=crop&w=1920&q=80" alt="Workshop Background" className="bg-image" id="perfBg" style={{ opacity: 0.2 }} />
+          <div className="performance-grid">
+            <div className="perf-card" style={{ transform: 'translateY(50px)', opacity: 0 }}>
+              <i className="fas fa-wrench"></i>
+              <h3>Diagnostics</h3>
+              <p>State-of-the-art computer diagnostics for all modern vehicles.</p>
             </div>
-          ))}
+            <div className="perf-card" style={{ transform: 'translateY(50px)', opacity: 0 }}>
+              <i className="fas fa-car-crash"></i>
+              <h3>Body Detailing</h3>
+              <p>Premium detailing and paint correction restoring showroom finish.</p>
+            </div>
+            <div className="perf-card" style={{ transform: 'translateY(50px)', opacity: 0 }}>
+              <i className="fas fa-tachometer-alt"></i>
+              <h3>Performance</h3>
+              <p>Engine tuning and performance upgrades for enthusiasts.</p>
+            </div>
+          </div>
         </div>
-      </section>
+      </div>
+
+      {/* Section 4: Parallax Image Banner */}
+      <div className="parallax-section" style={{ height: '70vh', overflow: 'hidden', position: 'relative' }}>
+        <img 
+          id="parallaxBanner"
+          src="https://images.unsplash.com/photo-1493238792000-8113da705763?auto=format&fit=crop&w=1920&q=80" 
+          alt="Luxury Car" 
+          style={{ width: '100%', height: '150%', objectFit: 'cover', position: 'absolute', top: '-25%', left: 0 }}
+        />
+        <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <h2 style={{ fontSize: '4vw', color: '#fff', textTransform: 'uppercase', letterSpacing: '10px' }}>Uncompromising Quality</h2>
+        </div>
+      </div>
+
+      {/* Section 5: Gallery */}
+      <div className="static-section" style={{ background: '#0a0a0a', minHeight: 'auto', padding: '100px 20px' }}>
+        <h2 style={{ fontSize: '3rem', color: '#fff', marginBottom: '50px', textAlign: 'center' }}>Our Masterpieces</h2>
+        <div className="gallery-grid">
+          <div className="gallery-item" style={{ transform: 'translateY(30px)', opacity: 0 }}>
+            <span className="badge">Service</span>
+            <img src="https://images.unsplash.com/photo-1503376710344-9cb60c042623?auto=format&fit=crop&w=800&q=80" alt="Gallery 1" />
+          </div>
+          <div className="gallery-item" style={{ transform: 'translateY(30px)', opacity: 0 }}>
+            <span className="badge">Detailing</span>
+            <img src="https://images.unsplash.com/photo-1600705722908-bab1e61c0b4d?auto=format&fit=crop&w=800&q=80" alt="Gallery 2" />
+          </div>
+          <div className="gallery-item" style={{ transform: 'translateY(30px)', opacity: 0 }}>
+            <span className="badge">Repair</span>
+            <img src="https://images.unsplash.com/photo-1517524206127-48bbd363f3d7?auto=format&fit=crop&w=800&q=80" alt="Gallery 3" />
+          </div>
+          <div className="gallery-item" style={{ transform: 'translateY(30px)', opacity: 0 }}>
+            <span className="badge">Custom</span>
+            <img src="https://images.unsplash.com/photo-1502877338535-766e1452684a?auto=format&fit=crop&w=800&q=80" alt="Gallery 4" />
+          </div>
+        </div>
+      </div>
 
       {/* CTA Section */}
-      <section className="py-24 bg-slate-900 overflow-hidden relative">
-        <div className="absolute top-0 right-0 w-1/2 h-full bg-blue-600/10 blur-[100px]" />
-        <div className="max-w-5xl mx-auto px-4 text-center relative z-10">
-          <h2 className="text-4xl lg:text-6xl font-black text-white mb-8 leading-tight">
-            Ready to give your car the <br/><span className="text-blue-500 text-glow">premium care</span> it deserves?
-          </h2>
-          <div className="flex flex-col sm:flex-row justify-center items-center gap-6">
-            <Button size="lg" className="h-16 px-12 text-xl font-black bg-blue-600 hover:bg-blue-700 shadow-2xl shadow-blue-500/20" onClick={() => router.push('/signup')}>
-              Book Appointment Now
-            </Button>
-            <p className="text-slate-400 font-bold flex items-center">
-              <CheckCircle2 className="w-5 h-5 text-emerald-500 mr-2" /> No credit card required
-            </p>
-          </div>
-        </div>
-      </section>
+      <div className="cta-section fade-up-on-scroll" style={{ opacity: 0, transform: 'translateY(30px)' }}>
+        <h2 style={{ fontSize: '4vw', margin: 0, color: '#fff' }}>Experience the difference.</h2>
+        <Link href="/login" className="btn-primary" style={{ marginTop: '30px' }}>Explore Services</Link>
+      </div>
 
       {/* Footer */}
-      <footer className="bg-white border-t border-slate-100 pt-20 pb-10">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-16">
-            <div className="col-span-1 md:col-span-1">
-              <div className="flex items-center space-x-2 mb-6">
-                <Wrench className="w-6 h-6 text-blue-600" />
-                <span className="text-2xl font-black text-slate-900">Sewa<span className="text-blue-600">Auto</span></span>
-              </div>
-              <p className="text-slate-500 leading-relaxed">
-                Empowering automobile businesses and vehicle owners with state-of-the-art management solutions.
-              </p>
-            </div>
-            {[
-              { title: 'Company', links: ['About', 'Careers', 'Privacy Policy', 'Contact'] },
-              { title: 'Product', links: ['Features', 'Pricing', 'Documentation', 'Changelog'] },
-              { title: 'Contact', links: ['+977 1 4400000', 'hello@sewaauto.com', 'Kathmandu, Nepal'] }
-            ].map((col, i) => (
-              <div key={i}>
-                <h4 className="font-black text-slate-900 mb-6 uppercase tracking-wider text-sm">{col.title}</h4>
-                <ul className="space-y-4">
-                  {col.links.map((link, j) => (
-                    <li key={j}><a href="#" className="text-slate-500 hover:text-blue-600 transition-colors font-medium">{link}</a></li>
-                  ))}
-                </ul>
+      <footer>
+        <div className="footer-content">
+          <div>
+            <h4>Sewa Auto Mobiles</h4>
+            <p>Gothatar bagmati corner<br />9841423470</p>
+          </div>
+          <div>
+            <h4>Explore</h4>
+            <ul>
+              <li><Link href="/about">About Us</Link></li>
+              <li><Link href="/services">Services</Link></li>
+              <li><Link href="/gallery">Gallery</Link></li>
+            </ul>
+          </div>
+          <div>
+            <h4>Action</h4>
+            <ul>
+              <li><Link href="/login">Book Service</Link></li>
+              <li><Link href="/contact">Contact Us</Link></li>
+            </ul>
+          </div>
+        </div>
+        <div className="footer-bottom">
+          &copy; {new Date().getFullYear()} Sewa Auto Mobiles. All rights reserved.
+        </div>
+      </footer>
+
+      {/* Live Chat Widget */}
+      {!chatOpen && (
+        <button className="live-chat-toggle" onClick={() => setChatOpen(true)}>
+          Live Chat
+        </button>
+      )}
+      
+      {chatOpen && (
+        <div className="chat-widget active">
+          <div className="chat-header" style={{ display: 'flex', justifyContent: 'space-between' }}>
+            <span>Support</span>
+            <span className="close-chat" onClick={() => setChatOpen(false)} style={{ cursor: 'pointer' }}>&times;</span>
+          </div>
+          <div className="chat-body" style={{ display: 'flex', flexDirection: 'column' }}>
+            {messages.map((msg, idx) => (
+              <div key={idx} className={`chat-message ${msg.sender}`} style={{ marginBottom: '10px', padding: '8px', borderRadius: '8px', alignSelf: msg.sender === 'user' ? 'flex-end' : 'flex-start' }}>
+                {msg.text}
               </div>
             ))}
           </div>
-          <div className="border-t border-slate-50 pt-8 text-center text-slate-400 text-sm font-medium">
-            © {new Date().getFullYear()} Sewa Automobile Pvt. Ltd. All rights reserved.
+          <div className="chat-input-area" style={{ display: 'flex' }}>
+            <input 
+              type="text" 
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
+              placeholder="Type a message..." 
+              style={{ flex: 1, padding: '5px' }}
+            />
+            <button onClick={sendMessage} style={{ background: '#2997ff', color: '#fff', border: 'none', borderRadius: '50%', width: '30px', height: '30px', marginLeft: '5px' }}>
+              &gt;
+            </button>
           </div>
         </div>
-      </footer>
+      )}
     </div>
   );
 }
-
-// Helper Badge Component
-const Badge: React.FC<{ children: React.ReactNode, variant?: 'info' | 'default', className?: string }> = ({ children, variant, className }) => {
-  const styles = variant === 'info' ? 'bg-blue-50 text-blue-600 border-blue-100' : 'bg-slate-100 text-slate-600 border-slate-200';
-  return (
-    <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 font-bold transition-colors ${styles} ${className}`}>
-      {children}
-    </span>
-  );
-};
